@@ -1,7 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { View, Text, Button } from "react-native";
+import { NavigationProp } from "@react-navigation/native";
 
-const Home = ({ navigation }: { navigation: any }): JSX.Element => {
+type HomeProps = {
+  navigation: NavigationProp<any>;
+};
+
+const Home = ({ navigation }: HomeProps): JSX.Element => {
   return (
     <View>
       <Text>Home Screen</Text>
