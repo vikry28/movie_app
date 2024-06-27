@@ -1,11 +1,16 @@
-import { FontAwesome } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
-import { ImageBackground, Text, TouchableOpacity, View, FlatList, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ImageBackground,
+  StyleSheet,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { API_ACCESS_TOKEN } from '@env';
 import { Movie } from '../types/app';
+import { FontAwesome } from '@expo/vector-icons';
 
 const coverImageSize = {
   width: 100,
@@ -27,21 +32,9 @@ const Favorite = (): JSX.Element => {
       const storedFavorites = await AsyncStorage.getItem('@FavoriteList');
       if (storedFavorites !== null) {
         const favoriteList: Movie[] = JSON.parse(storedFavorites);
-        const movieDetails = await Promise.all(
-          favoriteList.map(async (movie) => {
-            const url = `https://api.themoviedb.org/3/movie/${movie.id}`;
-            const options = {
-              method: 'GET',
-              headers: {
-                accept: 'application/json',
-                Authorization: `Bearer ${API_ACCESS_TOKEN}`,
-              },
-            };
-            const response = await fetch(url, options);
-            return await response.json();
-          })
-        );
-        setFavorites(movieDetails);
+        setFavorites(favoriteList);
+      } else {
+        setFavorites([]);
       }
     } catch (error) {
       console.log(error);
@@ -49,7 +42,7 @@ const Favorite = (): JSX.Element => {
   };
 
   const handleMoviePress = (movie: Movie) => {
-    navigation.navigate('MovieDetail', { data: { movie, coverType: 'poster' } });
+    navigation.navigate('MovieDetail', { id: movie.id }); // Navigasi ke layar MovieDetail dengan membawa ID film
   };
 
   const renderItem = ({ item }: { item: Movie }) => (
@@ -62,17 +55,13 @@ const Favorite = (): JSX.Element => {
           uri: `https://image.tmdb.org/t/p/w500/${item.poster_path}`,
         }}
       >
-        <LinearGradient
-          colors={['#00000000', 'rgba(0, 0, 0, 0.7)']}
-          locations={[0.6, 0.8]}
-          style={styles.gradientStyle}
-        >
+        <View style={styles.overlay}>
           <Text style={styles.movieTitle}>{item.title}</Text>
           <View style={styles.ratingContainer}>
             <FontAwesome name="star" size={12} color="yellow" />
             <Text style={styles.rating}>{item.vote_average.toFixed(1)}</Text>
           </View>
-        </LinearGradient>
+        </View>
       </ImageBackground>
     </TouchableOpacity>
   );
@@ -116,7 +105,8 @@ const styles = StyleSheet.create({
   backgroundImageStyle: {
     borderRadius: 8,
   },
-  gradientStyle: {
+  overlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 5,
   },
   movieTitle: {
@@ -134,11 +124,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginLeft: 2,
     fontSize: 12,
-  },
-  favoriteIcon: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
   },
   column: {
     justifyContent: 'space-between',
