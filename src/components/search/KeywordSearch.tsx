@@ -1,3 +1,4 @@
+import { NavigationProp, useNavigation } from '@react-navigation/native'
 import React, { useState } from 'react'
 import {
   SafeAreaView,
@@ -8,8 +9,9 @@ import {
   FlatList,
   ActivityIndicator,
   Image,
+  TouchableOpacity,
 } from 'react-native'
-
+import { TMDB_API_KEY } from '@env'
 interface Movie {
   id: number
   title: string
@@ -17,15 +19,17 @@ interface Movie {
   release_date: string
   poster_path: string
 }
+type KeywordScreenNavigationProp = NavigationProp<
+  { MovieDetail: { id: number } }
+>;
 
 const KeywordSearch = () => {
   const [keyword, setKeyword] = useState('') // State untuk menyimpan keyword pencarian
   const [movies, setMovies] = useState<Movie[]>([]) // State untuk menyimpan hasil pencarian film
   const [loading, setLoading] = useState(false) // State untuk status loading
-
+  const navigation = useNavigation<KeywordScreenNavigationProp>();
   // Fungsi untuk memanggil API TMDB berdasarkan kata kunci
   const fetchMoviesByKeyword = async (query: string) => {
-    const TMDB_API_KEY = '04f6dd992a0e046fd8dd068b4e4025a4' // Gantilah dengan API key Anda dari TMDB
     const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${query}&language=en-US&page=1`
 
     try {
@@ -58,6 +62,10 @@ const KeywordSearch = () => {
     }
   }
 
+  const handleMoviePress = (movie: Movie) => {
+    navigation.navigate('MovieDetail', { id: movie.id })
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <TextInput
@@ -74,25 +82,27 @@ const KeywordSearch = () => {
           data={movies}
           keyExtractor={(item) => item.id.toString()} // Kunci unik untuk setiap item
           renderItem={({ item }) => (
-            <View style={styles.item}>
-              <Image
-                style={styles.poster}
-                source={{
-                  uri: `https://image.tmdb.org/t/p/w200${item.poster_path}`,
-                }}
-              />
-              <View style={styles.details}>
-                <Text style={styles.title}>{item.title}</Text>
-                {item.overview ? (
-                  <Text style={styles.overview}>{item.overview}</Text>
-                ) : (
-                  <Text style={styles.overview}>No overview available</Text>
-                )}
-                <Text style={styles.releaseDate}>
-                  Release Date: {item.release_date}
-                </Text>
+            <TouchableOpacity onPress={() => handleMoviePress(item)}>
+              <View style={styles.item}>
+                <Image
+                  style={styles.poster}
+                  source={{
+                    uri: `https://image.tmdb.org/t/p/w200${item.poster_path}`,
+                  }}
+                />
+                <View style={styles.details}>
+                  <Text style={styles.title}>{item.title}</Text>
+                  {item.overview ? (
+                    <Text style={styles.overview}>{item.overview}</Text>
+                  ) : (
+                    <Text style={styles.overview}>No overview available</Text>
+                  )}
+                  <Text style={styles.releaseDate}>
+                    Release Date: {new Date(item.release_date).toLocaleDateString()}
+                  </Text>
+                </View>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             !loading && movies.length === 0 ? (
