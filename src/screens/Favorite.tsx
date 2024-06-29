@@ -1,56 +1,60 @@
-import { FontAwesome } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
-import { ImageBackground, Text, TouchableOpacity, View, FlatList, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { API_ACCESS_TOKEN } from '@env';
-import { Movie } from '../types/app';
+import { FontAwesome } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
+import React, { useState } from 'react'
+import { ImageBackground, Text, TouchableOpacity, View, FlatList, StyleSheet } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native'
+import { API_ACCESS_TOKEN } from '@env'
+import { Movie } from '../types/app'
+
+type FavoriteScreenNavigationProp = NavigationProp<
+  { MovieDetail: { id: number } }
+>;
 
 const coverImageSize = {
   width: 100,
   height: 150,
-};
+}
 
-const Favorite = (): JSX.Element => {
-  const [favorites, setFavorites] = useState<Movie[]>([]);
-  const navigation = useNavigation();
+const Favorite = (): JSX.Element =>{
+  const [favorites, setFavorites] = useState<Movie[]>([])
+  const navigation = useNavigation<FavoriteScreenNavigationProp>();
 
   useFocusEffect(
     React.useCallback(() => {
-      getFavoriteMovies();
+      getFavoriteMovies()
     }, [])
-  );
+  )
 
   const getFavoriteMovies = async (): Promise<void> => {
     try {
-      const storedFavorites = await AsyncStorage.getItem('@FavoriteList');
+      const storedFavorites = await AsyncStorage.getItem('@FavoriteList')
       if (storedFavorites !== null) {
-        const favoriteList: Movie[] = JSON.parse(storedFavorites);
+        const favoriteList: Movie[] = JSON.parse(storedFavorites)
         const movieDetails = await Promise.all(
           favoriteList.map(async (movie) => {
-            const url = `https://api.themoviedb.org/3/movie/${movie.id}`;
+            const url = `https://api.themoviedb.org/3/movie/${movie.id}`
             const options = {
               method: 'GET',
               headers: {
                 accept: 'application/json',
                 Authorization: `Bearer ${API_ACCESS_TOKEN}`,
               },
-            };
-            const response = await fetch(url, options);
-            return await response.json();
+            }
+            const response = await fetch(url, options)
+            return await response.json()
           })
-        );
-        setFavorites(movieDetails);
+        )
+        setFavorites(movieDetails)
       }
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
-  };
+  }
 
   const handleMoviePress = (movie: Movie) => {
-    navigation.navigate('MovieDetail', { data: { movie, coverType: 'poster' } });
-  };
+    navigation.navigate('MovieDetail', { id: movie.id })
+  }
 
   const renderItem = ({ item }: { item: Movie }) => (
     <TouchableOpacity style={styles.movieContainer} onPress={() => handleMoviePress(item)}>
@@ -70,12 +74,12 @@ const Favorite = (): JSX.Element => {
           <Text style={styles.movieTitle}>{item.title}</Text>
           <View style={styles.ratingContainer}>
             <FontAwesome name="star" size={12} color="yellow" />
-            <Text style={styles.rating}>{item.vote_average.toFixed(1)}</Text>
+            <Text style={styles.rating}>{(item.vote_average ?? 0).toFixed(1)}</Text>
           </View>
         </LinearGradient>
       </ImageBackground>
     </TouchableOpacity>
-  );
+  )
 
   return (
     <View style={styles.container}>
@@ -83,13 +87,13 @@ const Favorite = (): JSX.Element => {
       <FlatList
         data={favorites}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id?.toString() || Math.random().toString(36).substr(2, 9)}
         numColumns={3}
         columnWrapperStyle={styles.column}
       />
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -143,6 +147,6 @@ const styles = StyleSheet.create({
   column: {
     justifyContent: 'space-between',
   },
-});
+})
 
-export default Favorite;
+export default Favorite

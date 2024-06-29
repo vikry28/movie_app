@@ -1,4 +1,6 @@
+import { NavigationProp, useNavigation } from '@react-navigation/native'
 import React, { useState, useEffect } from 'react'
+import { TMDB_API_KEY } from '@env'
 import {
   SafeAreaView,
   StyleSheet,
@@ -8,6 +10,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Image,
+  Dimensions,
 } from 'react-native'
 
 interface Movie {
@@ -23,14 +26,19 @@ interface Genre {
   name: string
 }
 
-const TMDB_API_KEY = '04f6dd992a0e046fd8dd068b4e4025a4'
+type CategoryScreenNavigationProp = NavigationProp<
+  { MovieDetail: { id: number } }
+>;
 
-const CategorySeach = () => {
+const { width } = Dimensions.get('window')
+
+const CategorySearch = () => {
   const [genres, setGenres] = useState<Genre[]>([])
   const [selectedGenre, setSelectedGenre] = useState<number | null>(null)
   const [movies, setMovies] = useState<Movie[]>([])
   const [loading, setLoading] = useState(false)
-
+  const navigation = useNavigation<CategoryScreenNavigationProp>();
+  
   const fetchGenres = async () => {
     const url = `https://api.themoviedb.org/3/genre/movie/list?api_key=${TMDB_API_KEY}&language=en-US`
 
@@ -74,6 +82,10 @@ const CategorySeach = () => {
     fetchMoviesByGenre(genreId)
   }
 
+  const handleMoviePress = (movie: Movie) => {
+    navigation.navigate('MovieDetail', { id: movie.id })
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {loading && <ActivityIndicator size="large" color="#0000ff" />}
@@ -98,6 +110,8 @@ const CategorySeach = () => {
             <Text style={styles.noResultsText}>No genres found</Text>
           ) : null
         }
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.genreList}
       />
       {/* Daftar Film Berdasarkan Kategori */}
       {selectedGenre && (
@@ -105,31 +119,35 @@ const CategorySeach = () => {
           data={movies}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <View style={styles.item}>
-              <Image
-                style={styles.poster}
-                source={{
-                  uri: `https://image.tmdb.org/t/p/w200${item.poster_path}`,
-                }}
-              />
-              <View style={styles.details}>
-                <Text style={styles.title}>{item.title}</Text>
-                {item.overview ? (
-                  <Text style={styles.overview}>{item.overview}</Text>
-                ) : (
-                  <Text style={styles.overview}>No overview available</Text>
-                )}
-                <Text style={styles.releaseDate}>
-                  Release Date: {item.release_date}
-                </Text>
+            <TouchableOpacity onPress={() => handleMoviePress(item)}>
+              <View style={styles.item}>
+                <Image
+                  style={styles.poster}
+                  source={{
+                    uri: `https://image.tmdb.org/t/p/w200${item.poster_path}`,
+                  }}
+                />
+                <View style={styles.details}>
+                  <Text style={styles.title}>{item.title}</Text>
+                  {item.overview ? (
+                    <Text style={styles.overview}>{item.overview}</Text>
+                  ) : (
+                    <Text style={styles.overview}>No overview available</Text>
+                  )}
+                  <Text style={styles.releaseDate}>
+                    Release Date: {item.release_date}
+                  </Text>
+                </View>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             !loading && movies.length === 0 ? (
               <Text style={styles.noResultsText}>No movies found</Text>
             ) : null
           }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.movieList}
         />
       )}
     </SafeAreaView>
@@ -140,10 +158,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+    backgroundColor: '#fff',
+  },
+  genreList: {
+    paddingBottom: 10,
   },
   genreItem: {
     padding: 10,
-    margin: 5,
+    marginHorizontal: 5,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 10,
@@ -163,19 +185,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 10,
+    backgroundColor: '#f8f8f8',
   },
   poster: {
-    width: 100,
-    height: 150,
+    width: width * 0.3,
+    height: width * 0.45,
     borderRadius: 10,
   },
   details: {
     flex: 1,
     marginLeft: 10,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 5,
   },
   overview: {
     fontSize: 14,
@@ -184,6 +209,7 @@ const styles = StyleSheet.create({
   releaseDate: {
     fontSize: 12,
     color: 'blue',
+    marginTop: 5,
   },
   noResultsText: {
     textAlign: 'center',
@@ -191,6 +217,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'gray',
   },
+  movieList: {
+    paddingTop: 10,
+  },
 })
 
-export default CategorySeach
+export default CategorySearch
